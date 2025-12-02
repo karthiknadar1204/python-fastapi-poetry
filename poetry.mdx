@@ -1,0 +1,114 @@
+## In python project, run the following first
+Pip install poetry
+Poetry init
+Poetry config virtualenvs.in-project true
+Poetry install
+Poetry env info
+Poetry info -p
+Poetry shell
+Installing packages/dependencies:
+Poetry add requests
+
+**Pydantic** is a Python library that provides **data validation and settings management using Python type hints**.  
+It’s the reason your FastAPI app feels magical — it automatically validates incoming JSON, converts types, and gives you nice error messages when something is wrong.
+
+### In your code, what does Pydantic actually do?
+
+```python
+class Todo(BaseModel):
+    id: int
+    title: str
+    description: str
+```
+
+This tiny class does a lot when used with FastAPI:
+
+| What you write                  | What FastAPI + Pydantic does automatically                                      |
+|---------------------------------|----------------------------------------------------------------------------------|
+| `id: int`                       | Accepts only integers → if client sends `"id": "abc"`, returns 422 error         |
+| `title: str`                    | Accepts strings → auto-trims if needed, rejects numbers/objects                 |
+| `description: str`              | Same as above                                                                    |
+| Missing field                   | Returns clear error: "field required"                                            |
+| Extra fields client sends       | By default ignored (or can be configured to reject)                              |
+| Generates OpenAPI docs          | Your `/docs` page will show exactly this schema with types and examples         |
+
+### Example in action
+
+If you create a POST endpoint like this:
+
+```python
+@app.post("/todos/")
+def create_todo(todo: Todo):
+    return todo
+```
+
+And a client sends this JSON:
+
+```json
+{
+  "id": "not-an-integer",
+  "title": 123,
+  "description": true,
+  "extra_field": "surprise!"
+}
+```
+
+FastAPI + Pydantic instantly replies with a 422 error like this:
+
+```json
+{
+  "detail": [
+    {
+      "loc": ["body", "id"],
+      "msg": "value is not a valid integer",
+      "type": "type_error.integer"
+    },
+    {
+      "loc": ["body", "title"],
+      "msg": "str type expected",
+      "type": "type_error.str"
+    }
+  ]
+}
+```
+
+You don’t write any of that validation code yourself — Pydantic does it all from your type hints!
+
+### Why FastAPI loves Pydantic so much
+
+- **Zero boilerplate validation**
+- **Automatic request parsing** (JSON → Python objects)
+- **Automatic response validation** (with `response_model=Todo`)
+- **Editor autocomplete** (because `todo` is a real `Todo` instance)
+- **Great error messages** for API consumers
+- **Data conversion** (e.g., `"123"` → `123` if you ask for `int`)
+
+### Quick cheat sheet
+
+```python
+from pydantic import BaseModel
+from typing import Optional, List
+from datetime import datetime
+
+class Todo(BaseModel):
+    id: int
+    title: str
+    description: Optional[str] = None   # optional field
+    done: bool = False
+    tags: List[str] = []
+    created_at: datetime = None         # will auto-parse ISO strings
+
+    # You can even add custom validation
+    @validator('title')
+    def title_not_empty(cls, v):
+        if not v.strip():
+            raise ValueError('Title cannot be empty')
+        return v.strip()
+```
+
+### TL;DR
+
+**Pydantic = type hints on steroids for data validation and parsing.**  
+In FastAPI, it’s the engine that turns your Python classes into bulletproof, self-documenting API contracts with almost zero extra code.
+
+That’s why almost every serious FastAPI tutorial (including the official docs) starts with `from pydantic import BaseModel`. You’re already using it correctly! 🚀

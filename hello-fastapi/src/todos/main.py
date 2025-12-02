@@ -1,5 +1,12 @@
 from fastapi import FastAPI
 import uvicorn
+from pydantic import BaseModel
+
+class Todo(BaseModel):
+    id: int
+    title: str
+    description: str
+
 app=FastAPI()
 
 @app.get("/")
