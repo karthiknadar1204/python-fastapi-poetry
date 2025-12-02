@@ -6,10 +6,10 @@ app=FastAPI()
 def root():
     return "Hello World"
 
-@app.get("/gettodos")
-def get_todos():
+@app.get("/gettodos/{id}")
+def get_todos(id:int):
     print("get todos")
-    return "get todos called"
+    return f"get todos called {id}"
 
 @app.get("/getSingleTodo")
 def getSingleTodo():
